@@ -191,10 +191,15 @@ export class RepositoryConnection {
 		};
 
 		try {
-			return await this.octokit.request(
-				"PUT /repos/{owner}/{repo}/contents/{path}",
-				payload,
-			);
+			async publishToLocalFile(path: string, content: string) {
+    			const adapter = this.app.vault.adapter;
+    			await adapter.write(path, content);
+    			console.log("writing this file" + ${path} );
+  			}
+			//return await this.octokit.request(
+			//	"PUT /repos/{owner}/{repo}/contents/{path}",
+			//	payload,
+			//);
 		} catch (error) {
 			logger.error(error);
 		}
