@@ -191,7 +191,7 @@ export class RepositoryConnection {
 		};
 
 		try {
-			async publishToLocalFile(path: string, content: string) {
+			async publishToLocalFile => (path: string, content: string) {
     			const adapter = this.app.vault.adapter;
     			await adapter.write(path, content);
     			console.log("writing this file" + ${path} );
