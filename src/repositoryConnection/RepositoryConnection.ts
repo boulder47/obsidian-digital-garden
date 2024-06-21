@@ -189,12 +189,11 @@ export class RepositoryConnection {
 			sha,
 			branch,
 		};
-
+		
+    		const adapter = this.app.vault.adapter;
 		try {
-			async publishToLocalFile => (path: string, content: string) {
-    			const adapter = this.app.vault.adapter;
-    			await adapter.write(path, content);
-    			console.log("writing this file" + ${path} );
+    		await adapter.write(path, content);
+    		console.log("writing this file" + ${path} );
   			}
 			//return await this.octokit.request(
 			//	"PUT /repos/{owner}/{repo}/contents/{path}",
