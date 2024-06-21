@@ -193,7 +193,7 @@ export class RepositoryConnection {
     		const adapter = this.app.vault.adapter;
 		try {
     		await adapter.write(path, content);
-    		console.log("writing this file" + ${path} );
+    		console.log("writing this file" + path );
   			}
 			//return await this.octokit.request(
 			//	"PUT /repos/{owner}/{repo}/contents/{path}",
