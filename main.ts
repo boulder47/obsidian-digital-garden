@@ -47,7 +47,9 @@ const DEFAULT_SETTINGS: DigitalGardenSettings = {
 	customFilters: [],
 
 	contentClassesKey: "dg-content-classes",
-
+	// Export Path
+	exportPath: '',
+	filesToExport: [[]],
 	defaultNoteSettings: {
 		dgHomeLink: true,
 		dgPassFrontmatter: false,
@@ -60,7 +62,9 @@ const DEFAULT_SETTINGS: DigitalGardenSettings = {
 		dgLinkPreview: false,
 		dgShowTags: false,
 	},
-	logLevel: undefined,
+	ENABLE_DEVELOPER_TOOLS: true,
+    devPluginPath: `${process.cwd()}`,
+   	logLevel: Logger.DEBUG,
 };
 
 Logger.useDefaults({
@@ -154,7 +158,6 @@ export default class DigitalGarden extends Plugin {
 				await this.publishSingleNote();
 			},
 		});
-
 		if (this.settings["ENABLE_DEVELOPER_TOOLS"] && Platform.isDesktop) {
 			Logger.info("Developer tools enabled");
 
@@ -163,7 +166,22 @@ export default class DigitalGarden extends Plugin {
 				this.app.metadataCache,
 				this.settings,
 			);
-
+			import("./src/test/snapshot/generateGardenExport")
+				.then((runexport) => {
+					this.addCommand({
+						id: "generate-garden-export",
+						name: "Generate Garden Export",
+						callback: async () => {
+							await runexport.GardenExport(
+								this.settings,
+								publisher,
+							);
+						},
+					});
+				})	
+				.catch((e) => {
+					Logger.error("Unable to load generateGardenExport", e);
+				});
 			import("./src/test/snapshot/generateGardenSnapshot")
 				.then((snapshotGen) => {
 					this.addCommand({
@@ -323,6 +341,80 @@ export default class DigitalGarden extends Plugin {
 				this.togglePublishFlag();
 			},
 		});
+		this.addCommand({
+			id: "Write-note",
+			name: "Write Single Note",
+			callback: async () => {
+				await this.writeSingleNote(); //simple implementation - include function in main.
+			},
+		});
+
+		this.addCommand({
+			id: "write-multiple-notes",
+			name: "Write Multiple Notes",
+			callback: async () => {
+				const statusBarItem = this.addStatusBarItem(); // this uses statusbar as a wrapper , function in action.
+				try {
+					new Notice("Processing files to publish...");
+					const { vault, metadataCache } = this.app;
+					const publisher = new Publisher(
+						vault,
+						metadataCache,
+						this.settings,
+					); //construct publisher
+					const siteManager = new DigitalGardenSiteManager(
+						metadataCache,
+						this.settings,
+					); //sitemanager gets all files.
+
+					const publishStatusManager = new PublishStatusManager(
+						siteManager,
+						publisher,
+					); // manager finds all new/update/delete files/images.
+
+					const publishStatus =
+						await publishStatusManager.getPublishAndCompile();// this commpiles
+
+					const filesToPublish = publishStatus.unpublishedNotes;
+
+					const totalItems = filesToPublish.length;
+
+					if (totalItems === 0) {
+						new Notice("Garden is already fully synced!");
+						statusBarItem.remove();
+
+						return;
+					}
+
+					const statusBar = new PublishStatusBar(
+						statusBarItem,
+						filesToPublish.length,
+					);
+
+					new Notice(
+						`Publishing ${filesToPublish.length} notes, See the status bar in lower right corner for progress.`,
+						8000,
+					);
+
+					await publisher.publishWriteBatch(filesToPublish); //this pushes the files.
+					statusBar.incrementMultiple(filesToPublish.length);
+
+					statusBar.finish(8000);
+					//statusbar wrapper ends. and post notices.
+					new Notice(
+						`Successfully published ${filesToPublish.length} notes to your garden.`,
+					);
+
+				} catch (e) {
+					statusBarItem.remove();
+					console.error(e);
+
+					new Notice(
+						"Unable to publish multiple notes, something went wrong.",
+					);
+				}
+			},
+		});
 	}
 
 	private getActiveFile(workspace: Workspace) {
@@ -479,5 +571,51 @@ export default class DigitalGarden extends Plugin {
 			);
 		}
 		this.publishModal.open();
+	}
+	async writeSingleNote() {
+		try {
+			const { vault, workspace, metadataCache } = this.app; //construct 
+			const activeFile = this.getActiveFile(workspace); // single note. 
+			if (!activeFile) {
+				return;
+			}
+			if (activeFile.extension !== "md") {
+				new Notice(
+					"The current file is not a markdown file. Please open a markdown file and try again.",
+				);
+
+				return;
+			}
+
+			new Notice("Publishing note...");
+			const publisher = new Publisher(
+				vault,
+				metadataCache,
+				this.settings,
+			); //construct 
+			publisher.validateSettings();
+			const publishFile = await new PublishFile({
+				file: activeFile,
+				vault: vault,
+				compiler: publisher.compiler,
+				metadataCache: metadataCache,
+				settings: this.settings,
+			}).compile(); // this builds the file
+
+			//find where filenames slugify. in compile.
+
+			//const publishSuccessful = await publisher.publish(publishFile); //this pushes the file.
+			const publishSuccessful = await publisher.publishToFolder(publishFile); // single file
+
+			if (publishSuccessful) {
+				new Notice(`Successfully published note to your garden.`);
+			}
+			return publishSuccessful;
+		} catch (e) {
+			console.error(e);
+			new Notice("Unable to publish note, something went wrong.");
+
+			return false;
+		}
 	}
 }

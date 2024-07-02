@@ -103,6 +103,24 @@ export default class PublishStatusManager implements IPublishStatusManager {
 			deletedImagePaths,
 		};
 	}
+	async getPublishAndCompile(): Promise<PublishStatus> {
+		const unpublishedNotes: Array<CompiledPublishFile> = [];
+		const publishedNotes: Array<CompiledPublishFile> = [];
+		const changedNotes: Array<CompiledPublishFile> = [];
+
+		const marked = await this.publisher.getFilesMarkedForPublishing();
+
+		for (const file of marked.notes) {
+			const compiledFile = await file.compile();
+			const [content, _] = compiledFile.getCompiledFile();
+
+			unpublishedNotes.push(compiledFile);
+		}
+
+		return {
+			unpublishedNotes,
+		};
+	}
 }
 
 interface PathToRemove {
@@ -120,4 +138,5 @@ export interface PublishStatus {
 
 export interface IPublishStatusManager {
 	getPublishStatus(): Promise<PublishStatus>;
+	getPublishAndCompile(): Promise<PublishStatus>;
 }

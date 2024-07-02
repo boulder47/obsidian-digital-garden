@@ -1,4 +1,4 @@
-import { MetadataCache, Notice, TFile, Vault } from "obsidian";
+import { MetadataCache, Notice, TFile, Vault, base64ToArrayBuffer, } from "obsidian";
 import { Base64 } from "js-base64";
 import { getRewriteRules } from "../utils/utils";
 import {
@@ -11,14 +11,25 @@ import { Assets, GardenPageCompiler } from "../compiler/GardenPageCompiler";
 import { CompiledPublishFile, PublishFile } from "../publishFile/PublishFile";
 import Logger from "js-logger";
 import { RepositoryConnection } from "../repositoryConnection/RepositoryConnection";
+import fs from "fs/promises";
+import * as path from 'path';
+import {
+	extractBaseUrl,
+	generateUrlPath,
+	getGardenPathForNote,
+	getRewriteRules,
+} from "../utils/utils";
+
 
 export interface MarkedForPublishing {
 	notes: PublishFile[];
 	images: string[];
 }
 
-export const IMAGE_PATH_BASE = "src/site/img/user/";
+export const IMAGE_PATH_BASE = "src/site/";
 export const NOTE_PATH_BASE = "src/site/notes/";
+
+const fullpath = "/Users/mobilevideoeditor/website/"
 
 /**
  * Prepares files to be published and publishes them to Github
@@ -254,5 +265,126 @@ export default class Publisher {
 			);
 			throw {};
 		}
+	}
+	public async publishWriteBatch(files: CompiledPublishFile[]): Promise<boolean> {
+		const filesToPublish = files.filter((f) =>
+			isPublishFrontmatterValid(f.frontmatter),
+		);
+
+		if (filesToPublish.length === 0) {
+			return true;
+		}
+
+		try {
+			await this.writeTheseFiles(filesToPublish);
+			return true;
+		} catch (e) {
+				Logger.error(e);
+
+			return false;
+		}
+	}
+	public async writeTheseFiles(files: CompiledPublishFile[]) {
+		const normalizePath = (path: string) =>
+			path.startsWith("/") ? path.slice(1) : path;
+
+		const treePromises = files.map(async (file) => {
+			const [text, _] = file.compiledFile;
+
+			try {				
+				const originalString = generateUrlPath(file.getPath());
+				const urlPath = this.trimLastCharacters(originalString, 1);
+
+				const newFilePath = `${fullpath}${NOTE_PATH_BASE}${urlPath}.md`;
+				await this.writeFileWithDirectories(newFilePath, text);
+
+				return true;
+			} catch (e) {
+				Logger.error(e);
+			}
+		});
+
+		const treeAssetPromises = files
+			.flatMap((x) => x.compiledFile[1].images)
+			.map(async (asset) => {
+				//const content = asset.content; 
+				const arrayBuffer = base64ToArrayBuffer(asset.content);
+				const content = Buffer.from(arrayBuffer)
+				//const content = Base64.decode(asset.content); // Assuming `asset.content` contains the image content
+				try {
+					const newImagePath = `${fullpath}${IMAGE_PATH_BASE}${normalizePath(asset.path)}`;
+					await this.writeFileWithDirectories(newImagePath, content);
+					//await this.writeAssets([asset]); // Assuming `writeAssets` takes an array of assets
+
+				return true;
+					
+				} catch (e) {
+				Logger.error(e);
+				}
+			});
+		
+
+		// activate function here.
+		await Promise.all(treePromises);
+    	await Promise.all(treeAssetPromises);
+	}
+	public async publishToFolder(file: CompiledPublishFile): Promise<boolean> {
+		if (!isPublishFrontmatterValid(file.frontmatter)) {
+			return false;
+		}
+
+		try {
+			const [text, assets] = file.compiledFile;
+			await this.writeText(file.getPath(), text);
+			await this.writeAssets(assets);
+
+			return true;
+		} catch (e) {
+				Logger.error(e);
+
+			return false;
+		}
+	}
+	private async writeText(filePath: string, content: string) {
+		const newFilePath = `${fullpath}${NOTE_PATH_BASE}${normalizePath(file.getPath())}`;
+		try {
+			await this.writeFileWithDirectories(newFilePath, content);
+			} catch (e) {
+				Logger.error(e);
+			}
+	}
+	private async writeImage(filePath: string, content: string) {
+		const newImagePath = `${fullpath}${IMAGE_PATH_BASE}${normalizePath(asset.path)}`;
+		try {
+			await this.writeFileWithDirectories(newFilePath, content);
+			} catch (e) {
+				Logger.error(e);
+			}
+	}
+	private async writeAssets(assets: Assets) {
+		for (let idx = 0; idx < assets.images.length; idx++) {
+			const image = assets.images[idx];
+			await this.writeImage(image.path, image.content);
+		}
+	}
+	private async writeFileWithDirectories(filePath: string, content: string): Promise<void> {
+  				const directoryPath = path.dirname(filePath);
+ 				const fileName = path.basename(filePath);
+  				await this.ensureDirectoryExists(directoryPath);
+  				await fs.writeFile(filePath, content);
+  				console.log(`File ${fileName} written to ${directoryPath}`);
+	}
+	private async ensureDirectoryExists(dirPath: string): Promise<void> {
+  				try {
+    				await fs.access(dirPath);
+ 				} catch (error) {
+    				await fs.mkdir(dirPath, { recursive: true });
+  		}
+	}
+	trimLastCharacters(str: string, n: number): string {
+    	if (n <= 0) {
+        	return str;
+    	}
+    return str.slice(0, -n);
 	}
 }

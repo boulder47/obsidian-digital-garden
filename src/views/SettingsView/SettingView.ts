@@ -128,6 +128,10 @@ export default class SettingView {
 				});
 			});
 		this.initializeCustomFilterSettings();
+		this.settingsRootElement
+			.createEl("h3", { text: "Export" })
+		this.initializeExportSettings();
+
 		prModal.titleEl.createEl("h1", "Site template settings");
 	}
 
@@ -746,7 +750,57 @@ export default class SettingView {
 
 		new Setting(themeModal.contentEl).addButton(handleSaveSettingsButton);
 	}
+	private async initializeExportSettings() {
+		const exportModal = new Modal(this.app);
+		exportModal.containerEl.addClass("dg-settings");
+		exportModal.titleEl.createEl("h1", { text: "Export Settings" });
 
+		const handleSaveSettingsButton = (cb: ButtonComponent) => {
+			cb.setButtonText("Apply settings to site");
+			cb.setClass("mod-cta");
+
+			cb.onClick(async (_ev) => {
+				const octokit = new Octokit({
+					auth: this.settings.githubToken,
+				});
+				new Notice("Applying settings to site...");
+				await this.saveSettingsAndUpdateEnv();
+				await this.addFavicon(octokit);
+			});
+		};
+
+		new Setting(this.settingsRootElement)
+			.setName("Export")
+			.setDesc("Manage where to save your site")
+			.addButton((cb) => {
+				cb.setButtonText("Export Settings");
+
+				cb.onClick(async () => {
+					exportModal.open();
+				});
+			});
+
+		exportModal.contentEl
+			.createEl("h2", { text: "Export Settings" })
+			.prepend(this.getIcon("palette"));
+
+		new Setting(exportModal.contentEl)
+			.setName("exportpath")
+			.setDesc(
+				"The name of your site. This will be displayed as the site header.",
+			)
+			.addText((text) =>
+				text
+					.setValue(this.settings.exportPath)
+					.onChange(async (value) => {
+						this.settings.exportPath = value;
+						await this.saveSettings();
+					}),
+			);
+
+		new Setting(exportModal.contentEl).addButton(handleSaveSettingsButton);
+
+	}
 	private async saveSettingsAndUpdateEnv() {
 		const theme = JSON.parse(this.settings.theme);
 		const baseTheme = this.settings.baseTheme;
@@ -1001,6 +1055,8 @@ export default class SettingView {
 			addFilterInput(customFilters[i], filterList, i, this);
 		}
 	}
+
+
 
 	async renderCreatePr(
 		modal: Modal,
