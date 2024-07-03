@@ -14,12 +14,17 @@ import {
 import Logger from "js-logger";
 import { TemplateUpdateChecker } from "./TemplateManager";
 import { NOTE_PATH_BASE, IMAGE_PATH_BASE } from "../publisher/Publisher";
+import fs from "fs/promises";
+import * as path from 'path';
+
+
 
 const logger = Logger.get("digital-garden-site-manager");
 export interface PathRewriteRule {
 	from: string;
 	to: string;
 }
+
 export type PathRewriteRules = PathRewriteRule[];
 
 type ContentTreeItem = {
@@ -71,6 +76,7 @@ export default class DigitalGardenSiteManager {
 		const baseTheme = this.settings.baseTheme;
 		const siteName = this.settings.siteName;
 		const mainLanguage = this.settings.mainLanguage;
+		const exportPath = this.settings.exportPath;
 		let gardenBaseUrl = "";
 
 		// check that gardenbaseurl is not an access token wrongly pasted.
@@ -117,9 +123,25 @@ export default class DigitalGardenSiteManager {
 		const base64Settings = Base64.encode(envSettings);
 
 		const currentFile = await this.userGardenConnection.getFile(".env");
-
+		const envExportPath = `${exportPath}/".env`;
 		const decodedCurrentFile = Base64.decode(currentFile?.content ?? "");
-
+		if (Platform.isDesktop) {
+			async function ensureDirectoryExists(dirPath: string): Promise<void> {
+  				try {
+    				await fs.access(dirPath);
+ 				} catch (error) {
+    				await fs.mkdir(dirPath, { recursive: true });
+  				}
+			}
+			async function writeFileWithDirectories(filePath: string, content: string): Promise<void> {
+  				const directoryPath = path.dirname(filePath);
+ 				const fileName = path.basename(filePath);
+  				await ensureDirectoryExists(directoryPath);
+  				await fs.writeFile(filePath, content);
+  				console.log(`File ${fileName} written to ${directoryPath}`);
+				}
+			writeFileWithDirectories(envExportPath, envSettings);
+		}
 		if (decodedCurrentFile === envSettings) {
 			logger.info("No changes to .env file");
 
@@ -228,4 +250,5 @@ export default class DigitalGardenSiteManager {
 
 		return hashes;
 	}
+	
 }

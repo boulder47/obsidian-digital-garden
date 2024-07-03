@@ -29,7 +29,8 @@ export interface MarkedForPublishing {
 export const IMAGE_PATH_BASE = "src/site/";
 export const NOTE_PATH_BASE = "src/site/notes/";
 
-const fullpath = "/Users/mobilevideoeditor/website/"
+
+//const fullpath = "/Users/mobilevideoeditor/website/"
 
 /**
  * Prepares files to be published and publishes them to Github
@@ -50,6 +51,7 @@ export default class Publisher {
 		this.metadataCache = metadataCache;
 		this.settings = settings;
 		this.rewriteRules = getRewriteRules(settings.pathRewriteRules);
+
 
 		this.compiler = new GardenPageCompiler(
 			vault,
@@ -287,7 +289,7 @@ export default class Publisher {
 	public async writeTheseFiles(files: CompiledPublishFile[]) {
 		const normalizePath = (path: string) =>
 			path.startsWith("/") ? path.slice(1) : path;
-
+		const exportPath = this.settings.exportPath;
 		const treePromises = files.map(async (file) => {
 			const [text, _] = file.compiledFile;
 
@@ -295,7 +297,7 @@ export default class Publisher {
 				const originalString = generateUrlPath(file.getPath());
 				const urlPath = this.trimLastCharacters(originalString, 1);
 
-				const newFilePath = `${fullpath}${NOTE_PATH_BASE}${urlPath}.md`;
+				const newFilePath = `${exportPath}${NOTE_PATH_BASE}${urlPath}.md`;
 				await this.writeFileWithDirectories(newFilePath, text);
 
 				return true;
@@ -312,7 +314,7 @@ export default class Publisher {
 				const content = Buffer.from(arrayBuffer)
 				//const content = Base64.decode(asset.content); // Assuming `asset.content` contains the image content
 				try {
-					const newImagePath = `${fullpath}${IMAGE_PATH_BASE}${normalizePath(asset.path)}`;
+					const newImagePath = `${exportPath}${IMAGE_PATH_BASE}${normalizePath(asset.path)}`;
 					await this.writeFileWithDirectories(newImagePath, content);
 					//await this.writeAssets([asset]); // Assuming `writeAssets` takes an array of assets
 
@@ -346,7 +348,8 @@ export default class Publisher {
 		}
 	}
 	private async writeText(filePath: string, content: string) {
-		const newFilePath = `${fullpath}${NOTE_PATH_BASE}${normalizePath(file.getPath())}`;
+		const exportPath = this.settings.exportPath;
+		const newFilePath = `${exportPath}${NOTE_PATH_BASE}${normalizePath(file.getPath())}`;
 		try {
 			await this.writeFileWithDirectories(newFilePath, content);
 			} catch (e) {
@@ -354,7 +357,8 @@ export default class Publisher {
 			}
 	}
 	private async writeImage(filePath: string, content: string) {
-		const newImagePath = `${fullpath}${IMAGE_PATH_BASE}${normalizePath(asset.path)}`;
+		const exportPath = this.settings.exportPath;
+		const newImagePath = `${exportPath}${IMAGE_PATH_BASE}${normalizePath(asset.path)}`;
 		try {
 			await this.writeFileWithDirectories(newFilePath, content);
 			} catch (e) {
