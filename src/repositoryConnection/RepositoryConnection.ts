@@ -189,16 +189,12 @@ export class RepositoryConnection {
 			sha,
 			branch,
 		};
-		
-    		const adapter = this.app.vault.adapter;
+
 		try {
-    		await adapter.write(path, content);
-    		console.log("writing this file" + path );
-  			
-			//return await this.octokit.request(
-			//	"PUT /repos/{owner}/{repo}/contents/{path}",
-			//	payload,
-			//);
+			return await this.octokit.request(
+				"PUT /repos/{owner}/{repo}/contents/{path}",
+				payload,
+			);
 		} catch (error) {
 			logger.error(error);
 		}
@@ -320,17 +316,14 @@ export class RepositoryConnection {
 			const [text, _] = file.compiledFile;
 
 			try {
-				const adapter = this.app.vault.adapter;
-    			await adapter.write(path, content);
-    			console.log("writing this file" + path );
-				//const blob = await this.octokit.request(
-				//	"POST /repos/{owner}/{repo}/git/blobs",
-				//	{
-				//		...this.getBasePayload(),
-				//		content: text,
-				//		encoding: "utf-8",
-				//	},
-				//);
+				const blob = await this.octokit.request(
+					"POST /repos/{owner}/{repo}/git/blobs",
+					{
+						...this.getBasePayload(),
+						content: text,
+						encoding: "utf-8",
+					},
+				);
 
 				return {
 					path: `${NOTE_PATH_BASE}${normalizePath(file.getPath())}`,
@@ -347,17 +340,14 @@ export class RepositoryConnection {
 			.flatMap((x) => x.compiledFile[1].images)
 			.map(async (asset) => {
 				try {
-					const adapter = this.app.vault.adapter;
-    				await adapter.write(path, content);
-    				console.log("writing this file" + path );
-					//const blob = await this.octokit.request(
-					//	"POST /repos/{owner}/{repo}/git/blobs",
-					//	{
-					//		...this.getBasePayload(),
-					//		content: asset.content,
-					//		encoding: "base64",
-					//	},
-					//);
+					const blob = await this.octokit.request(
+						"POST /repos/{owner}/{repo}/git/blobs",
+						{
+							...this.getBasePayload(),
+							content: asset.content,
+							encoding: "base64",
+						},
+					);
 
 					return {
 						path: `${IMAGE_PATH_BASE}${normalizePath(asset.path)}`,
