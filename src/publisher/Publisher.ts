@@ -294,10 +294,10 @@ export default class Publisher {
 			const [text, _] = file.compiledFile;
 
 			try {				
-				const originalString = generateUrlPath(file.getPath());
-				const urlPath = this.trimLastCharacters(originalString, 1);
+				//const originalString = generateUrlPath(file.getPath());
+				//const urlPath = this.trimLastCharacters(originalString, 1);
 
-				const newFilePath = `${exportPath}${NOTE_PATH_BASE}${urlPath}.md`;
+				const newFilePath = `${exportPath}${NOTE_PATH_BASE}${normalizePath(file.getPath())}`;
 				await this.writeFileWithDirectories(newFilePath, text);
 
 				return true;
