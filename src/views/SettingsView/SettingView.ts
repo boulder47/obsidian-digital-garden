@@ -114,10 +114,6 @@ export default class SettingView {
 		this.settingsRootElement
 			.createEl("h3", { text: "Advanced" })
 			.prepend(this.getIcon("cog"));
-
-		this.settingsRootElement
-			.createEl("h3", { text: "Export" })
-			.prepend(this.getIcon("star"));
 		this.initializeExportSettings();
 
 		new Setting(this.settingsRootElement)

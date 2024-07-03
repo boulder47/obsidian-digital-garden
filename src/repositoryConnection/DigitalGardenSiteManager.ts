@@ -119,7 +119,7 @@ export default class DigitalGardenSiteManager {
 		const envSettings = Object.entries(keysToSet)
 			.map(([key, value]) => `${key}=${value}`)
 			.join("\n");
-		const envExportPath = `${exportPath}/".env`;
+		const envExportPath = `${exportPath}/.env`;
 		async function ensureDirectoryExists(dirPath: string): Promise<void> {
   			try {
     			await fs.access(dirPath);
