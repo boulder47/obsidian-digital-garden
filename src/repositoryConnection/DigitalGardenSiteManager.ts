@@ -119,6 +119,7 @@ export default class DigitalGardenSiteManager {
 		const envSettings = Object.entries(keysToSet)
 			.map(([key, value]) => `${key}=${value}`)
 			.join("\n");
+		const envExportPath = `${exportPath}/".env`;
 		async function ensureDirectoryExists(dirPath: string): Promise<void> {
   			try {
     			await fs.access(dirPath);
@@ -138,7 +139,6 @@ export default class DigitalGardenSiteManager {
 		const base64Settings = Base64.encode(envSettings);
 
 		const currentFile = await this.userGardenConnection.getFile(".env");
-		const envExportPath = `${exportPath}/".env`;
 		const decodedCurrentFile = Base64.decode(currentFile?.content ?? "");
 		
 		if (decodedCurrentFile === envSettings) {
