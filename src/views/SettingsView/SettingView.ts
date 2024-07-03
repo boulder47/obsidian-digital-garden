@@ -115,6 +115,11 @@ export default class SettingView {
 			.createEl("h3", { text: "Advanced" })
 			.prepend(this.getIcon("cog"));
 
+		this.settingsRootElement
+			.createEl("h3", { text: "Export" })
+			.prepend(this.getIcon("star"));
+		this.initializeExportSettings();
+
 		new Setting(this.settingsRootElement)
 			.setName("Path Rewrite Rules")
 			.setDesc(
@@ -128,10 +133,6 @@ export default class SettingView {
 				});
 			});
 		this.initializeCustomFilterSettings();
-		this.settingsRootElement
-			.createEl("h3", { text: "Export" })
-		this.initializeExportSettings();
-
 		prModal.titleEl.createEl("h1", "Site template settings");
 	}
 
