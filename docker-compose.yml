@@ -1,0 +1,22 @@
+version: '3'
+
+networks:
+  network1:
+    external: false
+
+
+services:
+  obsidiandgplugin:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: obsidiandgplugin
+    restart: always
+    networks:
+      - network1
+    image: obsidiandgplugin:latest
+    ports:
+      - "8080:8080"
+    environment:
+      PORT: 8080
+
