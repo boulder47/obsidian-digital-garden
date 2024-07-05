@@ -26,7 +26,7 @@ export interface MarkedForPublishing {
 	images: string[];
 }
 
-export const IMAGE_PATH_BASE = "src/site/";
+export const IMAGE_PATH_BASE = "src/site/img/";
 export const NOTE_PATH_BASE = "src/site/notes/";
 
 

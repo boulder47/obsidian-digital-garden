@@ -715,7 +715,7 @@ export class GardenPageCompiler {
 						const image = await this.vault.readBinary(linkedFile);
 						const imageBase64 = arrayBufferToBase64(image);
 
-						const cmsImgPath = `/${linkedFile.path}`;
+						const cmsImgPath = `/img/${linkedFile.path}`;
 						let name = "";
 
 						if (metaData && size) {
@@ -787,7 +787,7 @@ export class GardenPageCompiler {
 						}
 						const image = await this.vault.readBinary(linkedFile);
 						const imageBase64 = arrayBufferToBase64(image);
-						const cmsImgPath = `/${linkedFile.path}`;
+						const cmsImgPath = `/img/${linkedFile.path}`;
 						const imageMarkdown = `![${imageName}](${cmsImgPath})`;
 						assets.push({ path: cmsImgPath, content: imageBase64 });
 
